@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 班級管理小幫手 🌟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 頂部資訊區 */
+        .header {
+            background: #FFD93D;
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            text-align: center;
+            border: 3px solid #2C3E50;
+        }
+
+        .header h1 {
+            color: #FF6B6B;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .datetime {
+            font-size: 1.6em;
+            color: #2C3E50;
+            margin-bottom: 15px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.6);
+            padding: 12px 20px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .quote {
+            font-size: 1.3em;
+            padding: 18px;
+            background: #FF6B6B;
+            border-radius: 15px;
+            margin-top: 15px;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* 主要內容區 */
+        .main-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            border: 3px solid #2C3E50;
+            border-radius: 20px;
+        }
+
+        /* 不同卡片不同顏色 */
+        .card:nth-child(1) {
+            background: #6BCB77;
+        }
+
+        .card:nth-child(2) {
+            background: #FFB84D;
+        }
+
+        .card:nth-child(3) {
+            background: #A084DC;
+        }
+
+        .card:nth-child(4) {
+            background: #FF6B9D;
+        }
+
+        .card h2 {
+            color: white;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid rgba(255,255,255,0.5);
+            font-weight: bold;
+        }
+
+        /* 提醒系統 */
+        .reminder-input, .time-input {
+            padding: 12px;
+            font-size: 1.1em;
+            border: 3px solid #2C3E50;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: white;
+        }
+
+        .reminder-input {
+            width: 100%;
+        }
+
+        .time-input {
+            width: 48%;
+        }
+
+        button {
+            background: #FF6B6B;
+            color: white;
+            border: 3px solid #2C3E50;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #E74C3C;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0px);
+        }
+
+        .reminder-list {
+            margin-top: 15px;
+        }
+
+        .reminder-item {
+            background: rgba(255,255,255,0.9);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        .reminder-item button {
+            background: #E74C3C;
+            padding: 8px 15px;
+            font-size: 0.95em;
+        }
+
+        /* 值日生系統 */
+        .duty-students {
+            font-size: 1.4em;
+            color: #2C3E50;
+            padding: 18px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border: 2px dashed #2C3E50;
+        }
+
+        .duty-students .student {
+            display: inline-block;
+            background: #4ECDC4;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 25px;
+            font-weight: bold;
+            border: 3px solid #2C3E50;
+        }
+
+        /* 作業點名 */
+        .student-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .student-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .student-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+
+        .student-list::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+
+        .student-item {
+            padding: 12px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+            border: 2px solid rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
+        .student-item.completed {
+            background: #B4E7CE;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .student-item input[type="checkbox"] {
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            accent-color: #FF6B6B;
+        }
+
+        /* 大字報提醒 */
+        .alert-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 193, 7, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .alert-overlay.show {
+            display: flex;
+        }
+
+        .alert-box {
+            background: #FFD93D;
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 80%;
+            animation: bounce 0.5s;
+            border: 5px solid #FF6B6B;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        .alert-box h2 {
+            font-size: 3em;
+            color: #E74C3C;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .alert-box p {
+            font-size: 2em;
+            margin: 20px 0;
+            color: #2C3E50;
+            font-weight: bold;
+        }
+
+        .alert-box button {
+            font-size: 1.5em;
+            padding: 15px 40px;
+            background: #4ECDC4;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* 輸入區 */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            border: 3px solid #2C3E50;
+            border-radius: 10px;
+            background: white;
+        }
+
+        /* 設定區 */
+        .settings {
+            background: #FF6B9D;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            border: 3px solid #2C3E50;
+        }
+
+        .settings h2 {
+            color: white;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .settings textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 3px solid #2C3E50;
+            font-size: 1em;
+            background: white;
+        }
+
+        /* 聯絡簿系統 */
+        .contact-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .contact-item {
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 2px solid rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .contact-item .date {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .contact-item .content {
+            font-size: 1.1em;
+            color: #2C3E50;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .contact-item button {
+            background: #E74C3C;
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+
+        .contact-input-area {
+            margin-bottom: 15px;
+        }
+
+        .contact-input-area textarea {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            border: 3px solid #2C3E50;
+            border-radius: 10px;
+            background: white;
+            min-height: 80px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頂部資訊區 -->
+        <div class="header">
+            <h1>🌟 班級管理小幫手 🌟</h1>
+            <div class="datetime" id="datetime"></div>
+            <div class="quote" id="quote"></div>
+        </div>
+
+        <!-- 主要內容區 -->
+        <div class="main-content">
+            <!-- 提醒系統 -->
+            <div class="card">
+                <h2>⏰ 提醒事項</h2>
+                <div class="reminder-list" id="reminderList"></div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 3px solid rgba(255,255,255,0.5);">
+                    <input type="time" class="time-input" id="reminderTime" placeholder="時間">
+                    <input type="text" class="reminder-input" id="reminderText" placeholder="輸入提醒事項...">
+                    <button onclick="addReminder()">➕ 新增提醒</button>
+                </div>
+            </div>
+
+            <!-- 值日生系統 -->
+            <div class="card">
+                <h2>🧹 今日值日生</h2>
+                <div class="duty-students" id="dutyStudents"></div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 3px solid rgba(255,255,255,0.5);">
+                    <div class="input-group">
+                        <label>班級總人數：</label>
+                        <input type="number" id="totalStudents" value="30" min="4">
+                    </div>
+                    <div class="input-group">
+                        <label>起始座號：</label>
+                        <input type="number" id="startNumber" value="1" min="1">
+                        <button onclick="setDutyStart()">設定起始座號</button>
+                    </div>
+                    <button onclick="previousDutyDay()">⬅️ 上一天</button>
+                    <button onclick="nextDutyDay()">➡️ 下一天</button>
+                    <button onclick="resetDuty()">🔄 重新開始</button>
+                </div>
+            </div>
+
+            <!-- 作業點名系統 -->
+            <div class="card">
+                <h2>📚 作業點名</h2>
+                <div class="student-list" id="studentList"></div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 3px solid rgba(255,255,255,0.5);">
+                    <div class="input-group">
+                        <label>作業名稱：</label>
+                        <input type="text" id="homeworkName" placeholder="例如：數學習作">
+                        <button onclick="loadStudentsForHomework()">載入學生名單</button>
+                    </div>
+                    <button onclick="clearHomework()">清除記錄</button>
+                </div>
+            </div>
+
+            <!-- 聯絡簿系統 -->
+            <div class="card">
+                <h2>📝 聯絡簿事項</h2>
+                <div class="contact-list" id="contactList"></div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 3px solid rgba(255,255,255,0.5);">
+                    <div class="contact-input-area">
+                        <textarea id="contactText" placeholder="輸入今日聯絡簿事項..."></textarea>
+                        <button onclick="addContactItem()">➕ 新增事項</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設定區 -->
+        <div class="settings">
+            <h2>⚙️ 學生名單設定</h2>
+            <div class="input-group">
+                <label>學生姓名（一行一個）：</label>
+                <textarea id="studentNames" rows="6" style="width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #ddd; font-size: 1em;"></textarea>
+                <button onclick="saveStudentNames()">💾 儲存學生名單</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 大字報提醒 -->
+    <div class="alert-overlay" id="alertOverlay">
+        <div class="alert-box">
+            <h2 id="alertTitle">⏰ 提醒時間到了！</h2>
+            <p id="alertMessage" style="font-size: 2em; margin: 20px 0;"></p>
+            <button onclick="closeAlert()">✓ 知道了</button>
+        </div>
+    </div>
+
+    <script>
+        // 每日肯定句
+        const quotes = [
+            "今天的你，是最棒的！💪",
+            "相信自己，你可以做得更好！⭐",
+            "每一天都是新的開始！🌅",
+            "努力的你，真的很美！🌸",
+            "堅持下去，成功就在前方！🎯",
+            "你的笑容，能照亮整個教室！😊",
+            "學習使我們更強大！📚",
+            "今天又是充滿希望的一天！🌈",
+            "友善待人，快樂加倍！🤝",
+            "認真的態度，是成功的關鍵！🔑",
+            "每個人都是獨一無二的寶貝！💎",
+            "勇敢嘗試，不怕失敗！🚀",
+            "團隊合作，力量無窮！👥",
+            "保持好奇心，世界更精彩！🔍",
+            "善良是最美的品格！❤️"
+        ];
+
+        // 提醒音效（使用 Web Audio API）
+        function playNotificationSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+
+            // 播放三次
+            setTimeout(() => playBeep(), 600);
+            setTimeout(() => playBeep(), 1200);
+        }
+
+        function playBeep() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // 更新時間和日期
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('datetime').textContent = now.toLocaleDateString('zh-TW', options);
+
+            // 檢查提醒
+            checkReminders(now);
+        }
+
+        // 顯示每日肯定句
+        function showDailyQuote() {
+            const today = new Date().toDateString();
+            const savedDate = localStorage.getItem('quoteDate');
+
+            if (savedDate !== today) {
+                const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                document.getElementById('quote').textContent = randomQuote;
+                localStorage.setItem('quoteDate', today);
+                localStorage.setItem('todayQuote', randomQuote);
+            } else {
+                const savedQuote = localStorage.getItem('todayQuote') || quotes[0];
+                document.getElementById('quote').textContent = savedQuote;
+            }
+        }
+
+        // 提醒系統
+        function addReminder() {
+            const time = document.getElementById('reminderTime').value;
+            const text = document.getElementById('reminderText').value;
+
+            if (!time || !text) {
+                alert('請輸入時間和提醒內容！');
+                return;
+            }
+
+            const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+            reminders.push({ time, text });
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+
+            document.getElementById('reminderTime').value = '';
+            document.getElementById('reminderText').value = '';
+
+            displayReminders();
+        }
+
+        function displayReminders() {
+            const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+            const list = document.getElementById('reminderList');
+
+            list.innerHTML = reminders.map((r, index) => `
+                <div class="reminder-item">
+                    <span><strong>${r.time}</strong> - ${r.text}</span>
+                    <button onclick="deleteReminder(${index})">刪除</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteReminder(index) {
+            const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+            reminders.splice(index, 1);
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+            displayReminders();
+        }
+
+        function checkReminders(now) {
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+            const checkedKey = `checked_${currentTime}_${new Date().toDateString()}`;
+
+            if (localStorage.getItem(checkedKey)) return;
+
+            reminders.forEach(reminder => {
+                if (reminder.time === currentTime) {
+                    showAlert(reminder.text);
+                    playNotificationSound();
+                    localStorage.setItem(checkedKey, 'true');
+                }
+            });
+        }
+
+        function showAlert(message) {
+            document.getElementById('alertMessage').textContent = message;
+            document.getElementById('alertOverlay').classList.add('show');
+        }
+
+        function closeAlert() {
+            document.getElementById('alertOverlay').classList.remove('show');
+        }
+
+        // 值日生系統
+        function updateDutyStudents() {
+            const total = parseInt(document.getElementById('totalStudents').value);
+            if (total < 4) {
+                alert('班級人數至少需要4人！');
+                return;
+            }
+            localStorage.setItem('totalStudents', total);
+            displayDutyStudents();
+        }
+
+        function setDutyStart() {
+            const total = parseInt(localStorage.getItem('totalStudents') || '30');
+            const startNum = parseInt(document.getElementById('startNumber').value);
+
+            if (!startNum || startNum < 1) {
+                alert('請輸入有效的起始座號（至少為1）！');
+                return;
+            }
+
+            if (startNum > total) {
+                alert(`起始座號不能超過班級總人數（${total}人）！`);
+                return;
+            }
+
+            localStorage.setItem('dutyStart', startNum);
+            localStorage.setItem('dutyLastUpdate', new Date().toDateString());
+            displayDutyStudents();
+            alert(`已設定從座號 ${startNum} 開始值日！`);
+        }
+
+        function displayDutyStudents() {
+            const total = parseInt(localStorage.getItem('totalStudents') || '30');
+            const currentStart = parseInt(localStorage.getItem('dutyStart') || '1');
+
+            // 更新輸入框顯示值
+            document.getElementById('totalStudents').value = total;
+            document.getElementById('startNumber').value = currentStart;
+
+            const students = [];
+            for (let i = 0; i < 4; i++) {
+                let num = ((currentStart + i - 1) % total) + 1;
+                students.push(num);
+            }
+
+            document.getElementById('dutyStudents').innerHTML =
+                students.map(num => `<span class="student">座號 ${num}</span>`).join('');
+        }
+
+        function previousDutyDay() {
+            const total = parseInt(localStorage.getItem('totalStudents') || '30');
+            const currentStart = parseInt(localStorage.getItem('dutyStart') || '1');
+            // 每天後退2個座號（5,6,7,8 → 3,4,5,6 → 1,2,3,4）
+            const newStart = ((currentStart - 1 - 2 + total) % total) + 1;
+            localStorage.setItem('dutyStart', newStart);
+            localStorage.setItem('dutyLastUpdate', new Date().toDateString());
+            displayDutyStudents();
+        }
+
+        function nextDutyDay() {
+            const total = parseInt(localStorage.getItem('totalStudents') || '30');
+            const currentStart = parseInt(localStorage.getItem('dutyStart') || '1');
+            // 每天前進2個座號（1,2,3,4 → 3,4,5,6 → 5,6,7,8）
+            const newStart = ((currentStart - 1 + 2) % total) + 1;
+            localStorage.setItem('dutyStart', newStart);
+            localStorage.setItem('dutyLastUpdate', new Date().toDateString());
+            displayDutyStudents();
+        }
+
+        function resetDuty() {
+            if (confirm('確定要將值日生重設為從座號1開始嗎？')) {
+                localStorage.setItem('dutyStart', '1');
+                localStorage.setItem('dutyLastUpdate', new Date().toDateString());
+                displayDutyStudents();
+            }
+        }
+
+        // 計算兩個日期之間的工作日數量（跳過週末）
+        function calculateWorkdays(startDate, endDate) {
+            let count = 0;
+            let current = new Date(startDate);
+            current.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(0, 0, 0, 0);
+
+            while (current < end) {
+                current.setDate(current.getDate() + 1);
+                const dayOfWeek = current.getDay();
+                // 0=週日, 6=週六，跳過
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // 自動更新值日生（每天自動檢查並更新）
+        function autoUpdateDuty() {
+            const today = new Date().toDateString();
+            const lastUpdate = localStorage.getItem('dutyLastUpdate');
+
+            // 第一次使用，記錄今天的日期
+            if (!lastUpdate) {
+                localStorage.setItem('dutyLastUpdate', today);
+                return;
+            }
+
+            // 如果是同一天，不需要更新
+            if (lastUpdate === today) {
+                return;
+            }
+
+            // 計算經過了多少個工作日
+            const lastDate = new Date(lastUpdate);
+            const todayDate = new Date(today);
+            const workdaysPassed = calculateWorkdays(lastDate, todayDate);
+
+            // 如果有經過工作日，自動前進
+            if (workdaysPassed > 0) {
+                const total = parseInt(localStorage.getItem('totalStudents') || '30');
+                const currentStart = parseInt(localStorage.getItem('dutyStart') || '1');
+
+                // 每個工作日前進2個座號
+                const advancement = workdaysPassed * 2;
+                const newStart = ((currentStart - 1 + advancement) % total) + 1;
+
+                localStorage.setItem('dutyStart', newStart);
+                localStorage.setItem('dutyLastUpdate', today);
+
+                console.log(`值日生已自動更新！經過 ${workdaysPassed} 個工作日`);
+            }
+        }
+
+        // 學生名單管理
+        function saveStudentNames() {
+            const names = document.getElementById('studentNames').value.trim().split('\n').filter(n => n);
+            localStorage.setItem('studentNames', JSON.stringify(names));
+            localStorage.setItem('totalStudents', names.length);
+            document.getElementById('totalStudents').value = names.length;
+            alert('學生名單已儲存！');
+            displayDutyStudents();
+        }
+
+        function loadStudentNames() {
+            const names = JSON.parse(localStorage.getItem('studentNames') || '[]');
+            document.getElementById('studentNames').value = names.join('\n');
+        }
+
+        // 作業點名系統
+        function loadStudentsForHomework() {
+            const homeworkName = document.getElementById('homeworkName').value;
+            if (!homeworkName) {
+                alert('請輸入作業名稱！');
+                return;
+            }
+
+            const names = JSON.parse(localStorage.getItem('studentNames') || '[]');
+            if (names.length === 0) {
+                alert('請先在下方設定學生名單！');
+                return;
+            }
+
+            const homework = JSON.parse(localStorage.getItem(`homework_${homeworkName}`) || '{}');
+            const list = document.getElementById('studentList');
+
+            list.innerHTML = names.map((name, index) => {
+                const checked = homework[name] ? 'checked' : '';
+                const completed = homework[name] ? 'completed' : '';
+                return `
+                    <div class="student-item ${completed}">
+                        <span>${index + 1}. ${name}</span>
+                        <input type="checkbox" ${checked} onchange="toggleHomework('${homeworkName}', '${name}')">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleHomework(homeworkName, studentName) {
+            const homework = JSON.parse(localStorage.getItem(`homework_${homeworkName}`) || '{}');
+            homework[studentName] = !homework[studentName];
+            localStorage.setItem(`homework_${homeworkName}`, JSON.stringify(homework));
+            loadStudentsForHomework();
+        }
+
+        function clearHomework() {
+            const homeworkName = document.getElementById('homeworkName').value;
+            if (!homeworkName) return;
+
+            if (confirm('確定要清除這個作業的所有記錄嗎？')) {
+                localStorage.removeItem(`homework_${homeworkName}`);
+                loadStudentsForHomework();
+            }
+        }
+
+        // 聯絡簿系統
+        function addContactItem() {
+            const text = document.getElementById('contactText').value.trim();
+
+            if (!text) {
+                alert('請輸入聯絡簿事項！');
+                return;
+            }
+
+            const contacts = JSON.parse(localStorage.getItem('contactItems') || '[]');
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+
+            contacts.unshift({
+                id: Date.now(),
+                date: dateStr,
+                content: text
+            });
+
+            localStorage.setItem('contactItems', JSON.stringify(contacts));
+            document.getElementById('contactText').value = '';
+            displayContactItems();
+        }
+
+        function displayContactItems() {
+            const contacts = JSON.parse(localStorage.getItem('contactItems') || '[]');
+            const list = document.getElementById('contactList');
+
+            if (contacts.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">尚無聯絡簿事項</div>';
+                return;
+            }
+
+            list.innerHTML = contacts.map(item => `
+                <div class="contact-item">
+                    <div class="date">${item.date}</div>
+                    <div class="content">${item.content}</div>
+                    <button onclick="deleteContactItem(${item.id})">刪除</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteContactItem(id) {
+            if (!confirm('確定要刪除這個聯絡簿事項嗎？')) return;
+
+            const contacts = JSON.parse(localStorage.getItem('contactItems') || '[]');
+            const filtered = contacts.filter(item => item.id !== id);
+            localStorage.setItem('contactItems', JSON.stringify(filtered));
+            displayContactItems();
+        }
+
+        // 初始化
+        function init() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            showDailyQuote();
+            displayReminders();
+            autoUpdateDuty(); // 自動檢查並更新值日生
+            displayDutyStudents();
+            loadStudentNames();
+            displayContactItems();
+
+            // 清理過期的提醒檢查記錄
+            const today = new Date().toDateString();
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('checked_') && !key.includes(today)) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+
+        // 頁面載入時初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
