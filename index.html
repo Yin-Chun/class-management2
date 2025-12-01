@@ -189,6 +189,78 @@
         }
 
         /* 作業點名 */
+        .homework-display {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .homework-display::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .homework-display::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+
+        .homework-display::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+
+        .homework-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: white;
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .homework-section {
+            margin-bottom: 15px;
+        }
+
+        .homework-section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .homework-section-title.missing {
+            background: #FF6B6B;
+            color: white;
+        }
+
+        .homework-section-title.leave {
+            background: #FFD93D;
+            color: #2C3E50;
+        }
+
+        .homework-student-item {
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        .homework-student-item.missing {
+            background: #FFCCCB;
+            color: #C0392B;
+        }
+
+        .homework-student-item.leave {
+            background: #FFF4B3;
+            color: #7D6608;
+        }
+
         .student-list {
             max-height: 400px;
             overflow-y: auto;
@@ -434,14 +506,24 @@
             <!-- 作業點名系統 -->
             <div class="card">
                 <h2>📚 作業點名</h2>
-                <div class="student-list" id="studentList"></div>
+                <div id="homeworkDisplay" style="min-height: 100px;">
+                    <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">請輸入作業名稱並標記學生</div>
+                </div>
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 3px solid rgba(255,255,255,0.5);">
                     <div class="input-group">
                         <label>作業名稱：</label>
-                        <input type="text" id="homeworkName" placeholder="例如：數學習作">
-                        <button onclick="loadStudentsForHomework()">載入學生名單</button>
+                        <input type="text" id="homeworkName" placeholder="例如：數學習作 p.15-20">
                     </div>
-                    <button onclick="clearHomework()">清除記錄</button>
+                    <div class="input-group">
+                        <label>缺交者座號（用逗號分隔）：</label>
+                        <input type="text" id="missingStudents" placeholder="例如：1,3,5,8">
+                    </div>
+                    <div class="input-group">
+                        <label>請假者座號（用逗號分隔）：</label>
+                        <input type="text" id="leaveStudents" placeholder="例如：2,7">
+                    </div>
+                    <button onclick="saveHomeworkRecord()">💾 儲存記錄</button>
+                    <button onclick="clearHomeworkDisplay()">🗑️ 清除顯示</button>
                 </div>
             </div>
 
@@ -804,48 +886,96 @@
         }
 
         // 作業點名系統
-        function loadStudentsForHomework() {
-            const homeworkName = document.getElementById('homeworkName').value;
+        function saveHomeworkRecord() {
+            const homeworkName = document.getElementById('homeworkName').value.trim();
+            const missingInput = document.getElementById('missingStudents').value.trim();
+            const leaveInput = document.getElementById('leaveStudents').value.trim();
+
             if (!homeworkName) {
                 alert('請輸入作業名稱！');
                 return;
             }
 
-            const names = JSON.parse(localStorage.getItem('studentNames') || '[]');
-            if (names.length === 0) {
-                alert('請先在下方設定學生名單！');
+            // 解析座號（移除空格，分割逗號）
+            const missingNumbers = missingInput ? missingInput.split(',').map(n => n.trim()).filter(n => n) : [];
+            const leaveNumbers = leaveInput ? leaveInput.split(',').map(n => n.trim()).filter(n => n) : [];
+
+            if (missingNumbers.length === 0 && leaveNumbers.length === 0) {
+                alert('請至少輸入一位缺交或請假的學生座號！');
                 return;
             }
 
-            const homework = JSON.parse(localStorage.getItem(`homework_${homeworkName}`) || '{}');
-            const list = document.getElementById('studentList');
+            // 獲取學生名單
+            const studentNames = JSON.parse(localStorage.getItem('studentNames') || '[]');
 
-            list.innerHTML = names.map((name, index) => {
-                const checked = homework[name] ? 'checked' : '';
-                const completed = homework[name] ? 'completed' : '';
-                return `
-                    <div class="student-item ${completed}">
-                        <span>${index + 1}. ${name}</span>
-                        <input type="checkbox" ${checked} onchange="toggleHomework('${homeworkName}', '${name}')">
-                    </div>
-                `;
-            }).join('');
+            // 建立作業記錄
+            const homeworkRecord = {
+                name: homeworkName,
+                missing: missingNumbers,
+                leave: leaveNumbers,
+                timestamp: Date.now()
+            };
+
+            // 儲存記錄
+            localStorage.setItem('currentHomework', JSON.stringify(homeworkRecord));
+
+            // 顯示記錄
+            displayHomeworkRecord(homeworkRecord, studentNames);
         }
 
-        function toggleHomework(homeworkName, studentName) {
-            const homework = JSON.parse(localStorage.getItem(`homework_${homeworkName}`) || '{}');
-            homework[studentName] = !homework[studentName];
-            localStorage.setItem(`homework_${homeworkName}`, JSON.stringify(homework));
-            loadStudentsForHomework();
+        function displayHomeworkRecord(record, studentNames) {
+            const display = document.getElementById('homeworkDisplay');
+            let html = `<div class="homework-title">📚 ${record.name}</div>`;
+
+            // 顯示缺交者
+            if (record.missing.length > 0) {
+                html += `<div class="homework-section">
+                    <div class="homework-section-title missing">❌ 缺交名單（${record.missing.length}人）</div>`;
+
+                record.missing.forEach(seatNum => {
+                    const index = parseInt(seatNum) - 1;
+                    const name = studentNames[index] || '未設定';
+                    html += `<div class="homework-student-item missing">座號 ${seatNum}：${name}</div>`;
+                });
+
+                html += `</div>`;
+            }
+
+            // 顯示請假者
+            if (record.leave.length > 0) {
+                html += `<div class="homework-section">
+                    <div class="homework-section-title leave">🏥 請假名單（${record.leave.length}人）</div>`;
+
+                record.leave.forEach(seatNum => {
+                    const index = parseInt(seatNum) - 1;
+                    const name = studentNames[index] || '未設定';
+                    html += `<div class="homework-student-item leave">座號 ${seatNum}：${name}</div>`;
+                });
+
+                html += `</div>`;
+            }
+
+            display.innerHTML = html;
         }
 
-        function clearHomework() {
-            const homeworkName = document.getElementById('homeworkName').value;
-            if (!homeworkName) return;
+        function clearHomeworkDisplay() {
+            document.getElementById('homeworkName').value = '';
+            document.getElementById('missingStudents').value = '';
+            document.getElementById('leaveStudents').value = '';
+            document.getElementById('homeworkDisplay').innerHTML =
+                '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">請輸入作業名稱並標記學生</div>';
+            localStorage.removeItem('currentHomework');
+        }
 
-            if (confirm('確定要清除這個作業的所有記錄嗎？')) {
-                localStorage.removeItem(`homework_${homeworkName}`);
-                loadStudentsForHomework();
+        function loadCurrentHomework() {
+            const record = JSON.parse(localStorage.getItem('currentHomework') || 'null');
+            if (record) {
+                document.getElementById('homeworkName').value = record.name;
+                document.getElementById('missingStudents').value = record.missing.join(', ');
+                document.getElementById('leaveStudents').value = record.leave.join(', ');
+
+                const studentNames = JSON.parse(localStorage.getItem('studentNames') || '[]');
+                displayHomeworkRecord(record, studentNames);
             }
         }
 
@@ -909,6 +1039,7 @@
             autoUpdateDuty(); // 自動檢查並更新值日生
             displayDutyStudents();
             loadStudentNames();
+            loadCurrentHomework(); // 載入作業記錄
             displayContactItems();
 
             // 清理過期的提醒檢查記錄
