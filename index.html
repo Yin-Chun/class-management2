@@ -418,6 +418,7 @@
                     <div class="input-group">
                         <label>班級總人數：</label>
                         <input type="number" id="totalStudents" value="30" min="4">
+                        <button onclick="saveTotalStudents()">💾 儲存人數</button>
                     </div>
                     <div class="input-group">
                         <label>起始座號：</label>
@@ -637,6 +638,24 @@
         }
 
         // 值日生系統
+        function saveTotalStudents() {
+            const total = parseInt(document.getElementById('totalStudents').value);
+            if (!total || total < 4) {
+                alert('班級人數至少需要4人！');
+                return;
+            }
+
+            const currentStart = parseInt(localStorage.getItem('dutyStart') || '1');
+            if (currentStart > total) {
+                alert(`目前起始座號（${currentStart}）超過班級人數，已自動重設為座號1`);
+                localStorage.setItem('dutyStart', '1');
+            }
+
+            localStorage.setItem('totalStudents', total);
+            displayDutyStudents();
+            alert(`已儲存！班級總人數設定為 ${total} 人`);
+        }
+
         function updateDutyStudents() {
             const total = parseInt(document.getElementById('totalStudents').value);
             if (total < 4) {
