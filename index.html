@@ -261,6 +261,57 @@
             color: #7D6608;
         }
 
+        .homework-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 3px solid rgba(0,0,0,0.2);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .homework-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+        }
+
+        .homework-card-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2C3E50;
+        }
+
+        .homework-card-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .homework-card-buttons button {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        .btn-edit {
+            background: #3498DB;
+        }
+
+        .btn-edit:hover {
+            background: #2980B9;
+        }
+
+        .btn-delete {
+            background: #E74C3C;
+        }
+
+        .btn-delete:hover {
+            background: #C0392B;
+        }
+
         .student-list {
             max-height: 400px;
             overflow-y: auto;
@@ -522,8 +573,9 @@
                         <label>請假者座號（用逗號分隔）：</label>
                         <input type="text" id="leaveStudents" placeholder="例如：2,7">
                     </div>
-                    <button onclick="saveHomeworkRecord()">💾 儲存記錄</button>
-                    <button onclick="clearHomeworkDisplay()">🗑️ 清除顯示</button>
+                    <button onclick="saveHomeworkRecord()" id="saveBtn">➕ 新增作業</button>
+                    <button onclick="cancelEdit()" id="cancelBtn" style="display: none;">❌ 取消編輯</button>
+                    <button onclick="clearAllHomework()">🗑️ 清除全部</button>
                 </div>
             </div>
 
@@ -885,7 +937,9 @@
             document.getElementById('studentNames').value = names.join('\n');
         }
 
-        // 作業點名系統
+        // 作業點名系統 - 多項作業版本
+        let editingHomeworkId = null;
+
         function saveHomeworkRecord() {
             const homeworkName = document.getElementById('homeworkName').value.trim();
             const missingInput = document.getElementById('missingStudents').value.trim();
@@ -905,78 +959,179 @@
                 return;
             }
 
-            // 獲取學生名單
-            const studentNames = JSON.parse(localStorage.getItem('studentNames') || '[]');
+            // 獲取現有作業列表
+            const homeworkList = JSON.parse(localStorage.getItem('homeworkList') || '[]');
 
-            // 建立作業記錄
-            const homeworkRecord = {
-                name: homeworkName,
-                missing: missingNumbers,
-                leave: leaveNumbers,
-                timestamp: Date.now()
-            };
+            if (editingHomeworkId !== null) {
+                // 編輯模式 - 更新現有作業
+                const index = homeworkList.findIndex(hw => hw.id === editingHomeworkId);
+                if (index !== -1) {
+                    homeworkList[index] = {
+                        id: editingHomeworkId,
+                        name: homeworkName,
+                        missing: missingNumbers,
+                        leave: leaveNumbers,
+                        timestamp: Date.now()
+                    };
+                }
+                editingHomeworkId = null;
+                document.getElementById('saveBtn').textContent = '➕ 新增作業';
+                document.getElementById('cancelBtn').style.display = 'none';
+            } else {
+                // 新增模式 - 加入新作業
+                const newHomework = {
+                    id: Date.now(),
+                    name: homeworkName,
+                    missing: missingNumbers,
+                    leave: leaveNumbers,
+                    timestamp: Date.now()
+                };
+                homeworkList.unshift(newHomework); // 新作業放在最前面
+            }
 
-            // 儲存記錄
-            localStorage.setItem('currentHomework', JSON.stringify(homeworkRecord));
+            // 儲存到 localStorage
+            localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
 
-            // 顯示記錄
-            displayHomeworkRecord(homeworkRecord, studentNames);
+            // 清空輸入框
+            clearInputFields();
+
+            // 重新顯示所有作業
+            displayAllHomework();
         }
 
-        function displayHomeworkRecord(record, studentNames) {
+        function displayAllHomework() {
+            const homeworkList = JSON.parse(localStorage.getItem('homeworkList') || '[]');
             const display = document.getElementById('homeworkDisplay');
-            let html = `<div class="homework-title">📚 ${record.name}</div>`;
+            const studentNames = JSON.parse(localStorage.getItem('studentNames') || '[]');
 
-            // 顯示缺交者
-            if (record.missing.length > 0) {
-                html += `<div class="homework-section">
-                    <div class="homework-section-title missing">❌ 缺交名單（${record.missing.length}人）</div>`;
-
-                record.missing.forEach(seatNum => {
-                    const index = parseInt(seatNum) - 1;
-                    const name = studentNames[index] || '未設定';
-                    html += `<div class="homework-student-item missing">座號 ${seatNum}：${name}</div>`;
-                });
-
-                html += `</div>`;
+            if (homeworkList.length === 0) {
+                display.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">尚無作業記錄</div>';
+                return;
             }
 
-            // 顯示請假者
-            if (record.leave.length > 0) {
-                html += `<div class="homework-section">
-                    <div class="homework-section-title leave">🏥 請假名單（${record.leave.length}人）</div>`;
+            let html = '';
+            homeworkList.forEach(homework => {
+                html += `<div class="homework-card">
+                    <div class="homework-card-header">
+                        <div class="homework-card-title">📚 ${homework.name}</div>
+                        <div class="homework-card-buttons">
+                            <button class="btn-edit" onclick="editHomework(${homework.id})">✏️ 編輯</button>
+                            <button class="btn-delete" onclick="deleteHomework(${homework.id})">🗑️ 刪除</button>
+                        </div>
+                    </div>`;
 
-                record.leave.forEach(seatNum => {
-                    const index = parseInt(seatNum) - 1;
-                    const name = studentNames[index] || '未設定';
-                    html += `<div class="homework-student-item leave">座號 ${seatNum}：${name}</div>`;
-                });
+                // 顯示缺交者
+                if (homework.missing.length > 0) {
+                    html += `<div class="homework-section">
+                        <div class="homework-section-title missing">❌ 缺交名單（${homework.missing.length}人）</div>`;
+
+                    homework.missing.forEach(seatNum => {
+                        const index = parseInt(seatNum) - 1;
+                        const name = studentNames[index] || '未設定';
+                        html += `<div class="homework-student-item missing">座號 ${seatNum}：${name}</div>`;
+                    });
+
+                    html += `</div>`;
+                }
+
+                // 顯示請假者
+                if (homework.leave.length > 0) {
+                    html += `<div class="homework-section">
+                        <div class="homework-section-title leave">🏥 請假名單（${homework.leave.length}人）</div>`;
+
+                    homework.leave.forEach(seatNum => {
+                        const index = parseInt(seatNum) - 1;
+                        const name = studentNames[index] || '未設定';
+                        html += `<div class="homework-student-item leave">座號 ${seatNum}：${name}</div>`;
+                    });
+
+                    html += `</div>`;
+                }
 
                 html += `</div>`;
-            }
+            });
 
             display.innerHTML = html;
         }
 
-        function clearHomeworkDisplay() {
+        function editHomework(id) {
+            const homeworkList = JSON.parse(localStorage.getItem('homeworkList') || '[]');
+            const homework = homeworkList.find(hw => hw.id === id);
+
+            if (homework) {
+                editingHomeworkId = id;
+                document.getElementById('homeworkName').value = homework.name;
+                document.getElementById('missingStudents').value = homework.missing.join(', ');
+                document.getElementById('leaveStudents').value = homework.leave.join(', ');
+
+                // 改變按鈕文字
+                document.getElementById('saveBtn').textContent = '💾 儲存修改';
+                document.getElementById('cancelBtn').style.display = 'inline-block';
+
+                // 滾動到輸入區
+                document.getElementById('homeworkName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function deleteHomework(id) {
+            if (!confirm('確定要刪除這個作業記錄嗎？')) return;
+
+            const homeworkList = JSON.parse(localStorage.getItem('homeworkList') || '[]');
+            const filteredList = homeworkList.filter(hw => hw.id !== id);
+
+            localStorage.setItem('homeworkList', JSON.stringify(filteredList));
+            displayAllHomework();
+        }
+
+        function cancelEdit() {
+            editingHomeworkId = null;
+            clearInputFields();
+            document.getElementById('saveBtn').textContent = '➕ 新增作業';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function clearInputFields() {
             document.getElementById('homeworkName').value = '';
             document.getElementById('missingStudents').value = '';
             document.getElementById('leaveStudents').value = '';
-            document.getElementById('homeworkDisplay').innerHTML =
-                '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">請輸入作業名稱並標記學生</div>';
-            localStorage.removeItem('currentHomework');
+        }
+
+        function clearAllHomework() {
+            if (!confirm('確定要清除所有作業記錄嗎？')) return;
+
+            localStorage.removeItem('homeworkList');
+            displayAllHomework();
+            clearInputFields();
+            cancelEdit();
         }
 
         function loadCurrentHomework() {
-            const record = JSON.parse(localStorage.getItem('currentHomework') || 'null');
-            if (record) {
-                document.getElementById('homeworkName').value = record.name;
-                document.getElementById('missingStudents').value = record.missing.join(', ');
-                document.getElementById('leaveStudents').value = record.leave.join(', ');
+            // 舊版相容性：將舊的單一作業轉換為列表格式
+            const oldHomework = localStorage.getItem('currentHomework');
+            if (oldHomework) {
+                try {
+                    const record = JSON.parse(oldHomework);
+                    const homeworkList = JSON.parse(localStorage.getItem('homeworkList') || '[]');
 
-                const studentNames = JSON.parse(localStorage.getItem('studentNames') || '[]');
-                displayHomeworkRecord(record, studentNames);
+                    // 檢查是否已經轉換過
+                    if (homeworkList.length === 0 && record.name) {
+                        homeworkList.push({
+                            id: Date.now(),
+                            name: record.name,
+                            missing: record.missing || [],
+                            leave: record.leave || [],
+                            timestamp: record.timestamp || Date.now()
+                        });
+                        localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
+                    }
+
+                    localStorage.removeItem('currentHomework'); // 移除舊資料
+                } catch (e) {
+                    console.error('轉換舊資料時發生錯誤:', e);
+                }
             }
+
+            displayAllHomework();
         }
 
         // 聯絡簿系統
@@ -1030,6 +1185,39 @@
             displayContactItems();
         }
 
+        // 閒置自動跳回頂部功能
+        let idleTimer = null;
+        let idleTime = 0;
+        const IDLE_TIMEOUT = 360; // 6分鐘 = 360秒
+
+        function resetIdleTimer() {
+            idleTime = 0;
+        }
+
+        function checkIdleTime() {
+            idleTime++;
+            if (idleTime >= IDLE_TIMEOUT) {
+                // 閒置6分鐘，自動滾動到頂部
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                idleTime = 0; // 重置計時器
+            }
+        }
+
+        function initIdleDetection() {
+            // 監聽各種用戶活動事件
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+            events.forEach(event => {
+                document.addEventListener(event, resetIdleTimer, true);
+            });
+
+            // 每秒檢查一次閒置時間
+            idleTimer = setInterval(checkIdleTime, 1000);
+        }
+
         // 初始化
         function init() {
             updateDateTime();
@@ -1041,6 +1229,7 @@
             loadStudentNames();
             loadCurrentHomework(); // 載入作業記錄
             displayContactItems();
+            initIdleDetection(); // 啟動閒置檢測
 
             // 清理過期的提醒檢查記錄
             const today = new Date().toDateString();
